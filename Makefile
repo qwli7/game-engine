@@ -1,9 +1,22 @@
+# makefile variables
+CC = g++
+CFLAGS = -Wall -std=c++11
+INLCUDES = -I./third-party
+LIBS = -L./third-party/SDL2/lib/x64 -lSDL2 -lSDL2main -lSDL2_ttf -lSDL2_image -lSDL2_mixer
+
+# target 
+SRCS = src/main.cpp src/game.cpp \
+	   src/logger/Logger.cpp \
+	   src/widgets/Button.cpp 
+OBJ = main
+
+
 all: build run
 build:
-	g++ -o main src/*.cpp -I./third-party -L./third-party/SDL2/lib/x64 -lSDL2 -lSDL2main -lSDL2_ttf -lSDL2_image -lSDL2_mixer -Wall -std=c++11
+	$(CC) -o $(OBJ) $(SRCS) $(INLCUDES) $(LIBS) $(CFLAGS)
 
 run:
-	./main.exe
+	./$(OBJ).exe
 
 clean:
-	-rm main.exe
+	-rm $(OBJ).exe

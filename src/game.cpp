@@ -1,5 +1,7 @@
 #include <iostream>
 #include "game.h"
+#include "widgets/Button.h"
+#include "logger/Logger.h"
 #include "SDL2/include/SDL.h"
 #include "SDL2/include/SDL_image.h"
 #include "SDL2/include/SDL_mixer.h"
@@ -19,13 +21,15 @@ void Game::initialize()
         return;
     }
     // 设置窗口为全屏
-    // SDL_DisplayMode m_displayMode;
-    // SDL_GetWindowDisplayMode(m_window, &m_displayMode);
+    SDL_DisplayMode m_displayMode;
+    SDL_GetCurrentDisplayMode(0, &m_displayMode);
+    SDL_Log("SDL get display mode: %d x %d @ %d Hz", m_displayMode.w, m_displayMode.h, m_displayMode.refresh_rate);
 
     // 创建窗口，窗口居中
     m_window = SDL_CreateWindow(NULL, SDL_WINDOWPOS_CENTERED,
                                 SDL_WINDOWPOS_CENTERED,
-                                800, 600, SDL_WINDOW_BORDERLESS);
+                                m_displayMode.w, m_displayMode.h, SDL_WINDOW_BORDERLESS);
+
     if (!m_window)
     {
         SDL_Log("Window could not be created! SDL Error: %s", SDL_GetError());
@@ -59,10 +63,23 @@ void Game::initialize()
     Mix_PlayMusic(music, -1);
 
     // 设置窗口为全屏展示
-    // SDL_SetWindowFullscreen(m_window, SDL_WINDOW_FULLSCREEN);
+    SDL_SetWindowFullscreen(m_window, SDL_WINDOW_FULLSCREEN);
+
+    // 初始化 TTF
+    TTF_Init();
+    m_font = TTF_OpenFont("./assets/fonts/ARIAL.TTF", 24);
+    if (m_font == nullptr)
+    {
+        Logger::LogErr("TTF_OpenFont error:");
+        return;
+    }
+    // 渲染按钮
+    btn = craeteButton(100, 100, 100, 50, "Hello World", {255, 0, 0, 255}, {255, 255, 255, 255}, []()
+                       { Logger::LogInfo("Button clicked"); });
 
     isRunning = true;
     SDL_Log("SDL initialized successfully");
+    Logger::LogInfo("SDL initialized successfully ....");
 }
 
 void Game::run()
@@ -80,6 +97,7 @@ void Game::processInput()
     SDL_Event event;
     while (SDL_PollEvent(&event))
     {
+        handleButtonEvent(&btn, &event);
         switch (event.type)
         {
         case SDL_QUIT:
@@ -129,6 +147,9 @@ void Game::render()
     SDL_Rect dstRect = {initPosition.first, initPosition.second, surface->w, surface->h};
     SDL_RenderCopy(m_renderer, texture, NULL, &dstRect);
 
+    // 绘制按钮和文字
+    renderButton(m_renderer, m_font, &btn);
+
     SDL_RenderPresent(m_renderer); // 显示渲染结果
 }
 
@@ -146,6 +167,12 @@ void Game::destroy()
         SDL_DestroyWindow(m_window);
         m_window = nullptr;
     }
+
+    // 释放TTF
+    TTF_CloseFont(m_font);
+    m_font = nullptr;
+    TTF_Quit();
+
     // 退出 SDL
     SDL_Quit();
 }
